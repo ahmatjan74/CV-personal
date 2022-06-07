@@ -69,5 +69,29 @@ out = torch.from_numpy(a)
 print(a)
 print(out)
 
-data = cv2.imread()
+data = cv2.imread('test.png')
+print(data)
+
+out = torch.from_numpy(data)
+print(out)
+
+out = torch.flip(out, dims=[0])
+data1 = out.numpy()
+
+# cv2.imshow('test1', data1)
+# cv2.waitKey(0)
+
+x = torch.ones(2, 2, requires_grad=True)
+x.register_hook(lambda grad: grad * 2)
+
+y = x + 2
+z = y * y * 3
+nn = torch.ones(2, 2)
+torch.autograd.backward(z, grad_tensors=nn, retain_graph=True)
+z.backward(nn, retain_graph=True)
+print(torch.autograd.grad(z, [x], grad_outputs=nn))
+print(x.grad)
+print(y.grad)
+print(z.grad_fn)
+
 
