@@ -3,4 +3,5 @@ python-basic/.idea
 python-basic/bin
 python-basic/lib
 python-basic/share
+python-basic/src/**/__pycache__/*
 .idea
