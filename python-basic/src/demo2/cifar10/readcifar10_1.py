@@ -21,8 +21,8 @@ train_list = glob.glob(
 test_list = glob.glob(
     '/Users/aihemaitiabulipizi/Documents/ahmatjan/cv-aihe/CV-personal/dataset/cifar10/test_batch'
 )
-print(train_list)
-print(test_list)
+# print(train_list)
+# print(test_list)
 save_path = '/Users/aihemaitiabulipizi/Documents/ahmatjan/cv-aihe/CV-personal/dataset/cifar10/TRAIN'
 test_save_path = '/Users/aihemaitiabulipizi/Documents/ahmatjan/cv-aihe/CV-personal/dataset/cifar10/TEST'
 # train data img

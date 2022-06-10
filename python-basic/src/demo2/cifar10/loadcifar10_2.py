@@ -37,8 +37,8 @@ test_transform = transforms.Compose([
 
 class MyDataSet(Dataset):
     def __init__(self, im_list,
-                transform=None,
-                loader=default_loader):
+                 transform=None,
+                 loader=default_loader):
         super(MyDataSet, self).__init__()
         imgs = []
         for im_item in im_list:
@@ -73,7 +73,7 @@ test_dataset = MyDataSet(im_test_list,
                          transform=test_transform)
 
 train_data_loader = DataLoader(dataset=train_dataset, batch_size=6, shuffle=True,
-                               num_workers=0)
+                               num_workers=4)
 
 test_data_loader = DataLoader(dataset=test_dataset, batch_size=6, shuffle=False,
                               num_workers=4)
