@@ -5,6 +5,8 @@ import os
 from vggnet import VGGNet
 from resnet import resnet
 from mobilenetv1 import mobilenetv1_small
+from inceptionModule import inceptionNetSmall
+from pre_resnet import pytorch_resnet18
 from loadcifar10_2 import train_data_loader, test_data_loader
 import tensorboardX
 
@@ -21,10 +23,11 @@ if __name__ == '__main__':
     writer = tensorboardX.SummaryWriter(log_path)
 
     # net
-    net = VGGNet()
+    #  net = VGGNet()
     # net = resnet()
-    net = mobilenetv1_small()
-
+    # net = mobilenetv1_small()
+    # net = inceptionNetSmall()
+    net = pytorch_resnet18()
     # loss
     loss_func = nn.CrossEntropyLoss()
 
