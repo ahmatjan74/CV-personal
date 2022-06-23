@@ -45,7 +45,6 @@ class MobileNet(nn.Module):
 
         self.fc = nn.Linear(512, 10)
 
-
     def forward(self, x):
         out = self.conv1(x)
         out = self.conv_dw2(out)
