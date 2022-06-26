@@ -61,6 +61,7 @@ class PSPNet(nn.Module):
         self.final = nn.Sequential(
             nn.Conv2d(4096, 512, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(512, momentum=.95),
+            nn.ReLU(),
             nn.Dropout(0.1),
             nn.Conv2d(512, num_classes, kernel_size=1)
         )
