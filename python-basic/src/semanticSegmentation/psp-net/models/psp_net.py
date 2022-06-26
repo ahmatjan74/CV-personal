@@ -3,8 +3,7 @@ import torch.nn.functional as F
 from torch import nn
 from torchvision import models
 
-from ..utils import initialize_weights
-from ..utils.misc import Conv2dDeformable
+from src.semanticSegmentation.utils import initialize_weights
 from config import res101_path
 
 
