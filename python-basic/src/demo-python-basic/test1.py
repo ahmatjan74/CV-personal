@@ -31,5 +31,5 @@ plt.plot(X, y)
 plt.xlabel('X')
 plt.ylabel(y)
 plt.show()
-
+1
 print(get_ones())
