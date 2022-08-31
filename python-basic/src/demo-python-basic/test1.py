@@ -1,6 +1,6 @@
 import random
-from matplotlib import pyplot as plt
 from numpyFun import get_ones
+import matplotlib.pyplot as plt
 
 
 def add(a, b):
