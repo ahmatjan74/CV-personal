@@ -104,32 +104,69 @@ class Transformer(nn.Module):
             x = ff(x) + x
         return x
 
- 
+#  image_size = 256,
+#         patch_size = 32,
+#         num_classes = 1000,
+#         dim = 1024,
+#         depth = 6,
+#         heads = 16,
+#         mlp_dim = 2048,
+#         dropout = 0.1,
+#         emb_dropout = 0.1
 class ViT(nn.Module):
-    def __init__(self, *, image_size, patch_size, num_classes, dim, depth, heads, mlp_dim, pool='cls', channels=3, dim_head=64, dropout=0., emb_dropout=0.):
+    def __init__(self, 
+                 *, 
+                 image_size, # 256
+                 patch_size, # 32
+                 num_classes, #1000
+                 dim, #1024
+                 depth, # 6
+                 heads, # 16
+                 mlp_dim, #2048
+                 pool='cls', 
+                 channels=3, 
+                 dim_head=64, 
+                 dropout=0., 
+                 emb_dropout=0.
+                ):
         super().__init__()
-        image_height, image_width = pair(image_size)
-        patch_height, patch_width = pair(patch_size)
+        image_height, image_width = pair(image_size) # (245, 256)
+        patch_height, patch_width = pair(patch_size) # (16, 16)
 
-        assert  image_height % patch_height ==0 and image_width % patch_width == 0
+        # if image_height % patch_height == 0 and image_width % patch_width == 0
+        # 执行下面的语句
+        assert  image_height % patch_height == 0 and image_width % patch_width == 0
 
+        # num_patches = (256 // 16) * (256 // 16) = 16 * 16 = 256
         num_patches = (image_height // patch_height) * (image_width // patch_width)
+        
+        # patch_dim = 3 * 16 * 16
         patch_dim = channels * patch_height * patch_width
+        
         assert pool in {'cls', 'mean'}
+
+        # to_patch_embedding: 
+        # einops：灵活和强大的张量操作，可读性强和可靠性好的代码。支持numpy、pytorch、tensorflow等。
+        # 代码中Rearrage的意思是将传入的image（3，256，256），
+        # 按照（3，（h,p1）,(w,p2))也就是256=h*p1,256 = w*p2，接着把shape变成b (h w) (p1 p2 c)格式的，
+        # 这样把图片分成了每个patch并且将patch拉长，方便下一步的全连接层
+        # 还有一种方法是采用窗口为16*16，stride 16的卷积核提取每个patch，然后再flatten送入全连接层。
 
         self.to_patch_embedding = nn.Sequential(
             Rearrange('b c (h p1) (w p2) -> b (h w) (p1 p2 c)', p1=patch_height, p2=patch_width),
             nn.Linear(patch_dim, dim)
         )
 
-        self.pos_embedding = nn.Parameter(torch.randn(1, num_patches+1, dim))
-        self.cls_token = nn.Parameter(torch.randn(1, 1, dim))					# nn.Parameter()定义可学习参数
+        # nn.Parameter()定义可学习参数
+        self.pos_embedding = nn.Parameter(torch.randn(1, num_patches + 1, dim))
+        self.cls_token = nn.Parameter(torch.randn(1, 1, dim))
         self.dropout = nn.Dropout(emb_dropout)
 
         self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim, dropout)
 
         self.pool = pool
-        self.to_latent = nn.Identity()
+        # 通过阅读源码可以看到，identity模块不改变输入。直接return input
+        self.to_latent = nn.Identity() 
 
         self.mlp_head = nn.Sequential(
             nn.LayerNorm(dim),
@@ -137,22 +174,32 @@ class ViT(nn.Module):
         )
 
     def forward(self, img):
-        x = self.to_patch_embedding(img)        # b c (h p1) (w p2) -> b (h w) (p1 p2 c) -> b (h w) dim
-        b, n, _ = x.shape           # b表示batchSize, n表示每个块的空间分辨率, _表示一个块内有多少个值
+        # b c (h p1) (w p2) -> b (h w) (p1 p2 c) -> b (h w) dim
+        x = self.to_patch_embedding(img)  
+              
+        # b表示batchSize, n表示每个块的空间分辨率, _表示一个块内有多少个值
+        b, n, _ = x.shape           
 
-        cls_tokens = repeat(self.cls_token, '() n d -> b n d', b=b)  # self.cls_token: (1, 1, dim) -> cls_tokens: (batchSize, 1, dim)  
-        x = torch.cat((cls_tokens, x), dim=1)               # 将cls_token拼接到patch token中去       (b, 65, dim)
-        x += self.pos_embedding[:, :(n+1)]                  # 加位置嵌入（直接加）      (b, 65, dim)
+        # self.cls_token: (1, 1, dim) -> cls_tokens: (batchSize, 1, dim)  
+        cls_tokens = repeat(self.cls_token, '() n d -> b n d', b=b)  
+         # 将cls_token拼接到patch token中去  (b, 65, dim)
+        x = torch.cat((cls_tokens, x), dim=1) 
+         # 加位置嵌入（直接加）      (b, 65, dim)             
+        x += self.pos_embedding[:, :(n+1)]                 
         x = self.dropout(x)
 
-        x = self.transformer(x)                                                 # (b, 65, dim)
+        # (b, 65, dim)
+        x = self.transformer(x)                                                 
 
-        x = x.mean(dim=1) if self.pool == 'mean' else x[:, 0]                   # (b, dim)
+        # (b, dim)
+        x = x.mean(dim=1) if self.pool == 'mean' else x[:, 0]                   
 
-        x = self.to_latent(x)                                                   # Identity (b, dim)
+        # Identity (b, dim)
+        x = self.to_latent(x)                                                   
         print(x.shape)
 
-        return self.mlp_head(x)                                                 #  (b, num_classes)
+         #  (b, num_classes)
+        return self.mlp_head(x)                                                
 
  
     
@@ -170,7 +217,7 @@ model_vit = ViT(
     )
 
 img = torch.randn(16, 3, 256, 256)
-
+print(img)
 preds = model_vit(img) 
 
 print(preds.shape)  # (16, 1000)
