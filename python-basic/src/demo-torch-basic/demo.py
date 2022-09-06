@@ -2,6 +2,9 @@ import torch
 import numpy as np
 import cv2
 
+
+print(torch.__version__)
+
 a = torch.rand(2, 2) * 10
 print(a)
 
