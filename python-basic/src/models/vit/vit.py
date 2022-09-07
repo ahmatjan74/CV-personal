@@ -164,14 +164,14 @@ class ViT(nn.Module):
 
         # if image_height % patch_height == 0 and image_width % patch_width == 0
         # 执行下面的语句
-        assert  image_height % patch_height == 0 and image_width % patch_width == 0
+        assert  image_height % patch_height == 0 and image_width % patch_width == 0, 'Image dimensions must be divisible by the patch size.'
 
         # num_patches = (256 // 16) * (256 // 16) = 16 * 16 = 256
         # 获取图像切块的个数
         num_patches = (image_height // patch_height) * (image_width // patch_width)
         
         # patch_dim = 3 * 16 * 16
-        # 线性变换时的输入大小，即每一个图像宽、高、通道的乘积
+        # 线性变换时的输入大小，即每一个图像宽、高、通道的乘积, 每一个小块的所有像素个数
         patch_dim = channels * patch_height * patch_width
         
         assert pool in {'cls', 'mean'}
@@ -179,7 +179,6 @@ class ViT(nn.Module):
         self.to_patch_embedding = nn.Sequential(
             # 将批量为b,通道为c,高为h*p1,宽为w*p2的图像,转化为批量为b,个数为h*w,维度为p1*p2*c的图像块
             # 即，把b张c通道的图像分割成b*（h*w）张大小为P1*p2*c的图像块
-            # 例如：patch_size为16  (8, 3, 48, 48)->(8, 9, 768)
             Rearrange('b c (h p1) (w p2) -> b (h w) (p1 p2 c)', p1=patch_height, p2=patch_width),
             # 对分割好的图像块进行线性处理（全连接），输入维度为每一个小块的所有像素个数，输出为dim（函数传入的参数）
             nn.Linear(patch_dim, dim)
@@ -218,12 +217,11 @@ class ViT(nn.Module):
 
         # self.cls_token: (1, 1, dim) -> cls_tokens: (batchSize, 1, dim)  
         # 分类令牌，将self.cls_token（形状为1, 1, dim）赋值为shape (b, 1, dim)
-        cls_tokens = repeat(self.cls_token, '() n d -> b n d', b=b)  
+        cls_tokens = repeat(self.cls_token, '() n d -> b n d', b=b)  # repeat b次
         
         # 将分类令牌拼接到输入中，x的shape (b, n+1, 1024)
         x = torch.cat((cls_tokens, x), dim=1) 
         
-        # 加位置嵌入（直接加）      (b, 65, dim)  
         # 进行位置编码，shape (b, n+1, 1024)           
         x += self.pos_embedding[:, :(n+1)]                 
         x = self.dropout(x)
@@ -231,7 +229,8 @@ class ViT(nn.Module):
         # transformer操作
         x = self.transformer(x)                                                 
 
-        x = x.mean(dim=1) if self.pool == 'mean' else x[:, 0]                   
+        # 获取所有向量的平均 或 只需要第一个向量        
+        x = x.mean(dim=1) if self.pool == 'mean' else x[:, 0]         
 
         # Identity (b, dim)
         x = self.to_latent(x)                                                   
@@ -248,16 +247,15 @@ model_vit = ViT(
         image_size = 256,
         patch_size = 32,
         num_classes = 1000,
-        dim = 1024,
-        depth = 6,
-        heads = 16,
-        mlp_dim = 2048,
-        dropout = 0.1,
+        dim = 1024, # 每个向量的维度
+        depth = 6,# 用了几次这个Transformer Encoder
+        heads = 16,# 多头注意力机制的 多头
+        mlp_dim = 2048, # mlp的维度
+        dropout = 0.1, # 防止过拟合用的
         emb_dropout = 0.1
     )
 
-img = torch.randn(16, 3, 256, 256)
-print(img)
+img = torch.randn(16, 3, 256, 256) # batch_size: 16, channel: 3, h: 256, w: 256 
 preds = model_vit(img) 
 
 print(preds.shape)  # (16, 1000)
